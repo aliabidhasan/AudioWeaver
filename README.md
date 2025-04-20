@@ -41,11 +41,28 @@ Please be aware of the current limitations of Audio Weaver:
 
 ### Usage
 
-1.  [Explain how to generate a new podcast episode]
-2.  [Describe how to use the prompting system for customization]
-3.  [Detail how to engage with the learning features (note-taking, discussions, etc.)]
-4.  [Explain the sharing functionalities]
-5.  [Provide examples of effective system prompts]
+1.  The app will ask you for your API key that will be stored locally in your instance for connecting with the AI services (Gemini, ElevenLabs)
+
+![image](https://github.com/user-attachments/assets/0b8510f0-8d77-49d6-b27c-5b4f22e79cc7)
+
+2.  The app will ask you to upload relevant documents that you want to parse and analyze 
+
+![image](https://github.com/user-attachments/assets/2a1df295-a5b5-416f-be30-c8af42ab5177)
+
+3.  Before processing documents, the app will ask the user for additional context based on the following questions
+
+![image](https://github.com/user-attachments/assets/6e95006b-a1d9-432b-8b39-97830c5477e5)
+
+4.  The app works its magic to generate a summary and an audio output
+
+![image](https://github.com/user-attachments/assets/2063b4f8-3a40-4904-8e28-f7c5c5616968)
+
+![image](https://github.com/user-attachments/assets/1fc4e64f-887d-4956-9d0d-4c6de2463602)
+
+5. The user will critically reflect on the output through a series of prompts to enhance the audio generation
+
+![image](https://github.com/user-attachments/assets/d6c744f4-090d-48d5-abeb-41a2c8c122b7)
+
 
 ## Contributing
 
