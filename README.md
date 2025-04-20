@@ -4,6 +4,9 @@
 [![Maintenance](https://img.shields.io/badge/Maintained-No-yellow.svg)](https://github.com/aliabidhasan/AudioWeaver)
 ![Typescript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 
+![image](https://github.com/user-attachments/assets/88a53b04-999e-4bba-b137-1ba6ffe3b88a)
+
+
 **Audio Weaver** is a cutting-edge technological solution designed to streamline podcast creation and foster a deeper, more collaborative learning experience around audio content. Leveraging the power of Large Language Models (LLMs), Audio Weaver enables users to generate podcast episodes and engage with the content in meaningful ways.
 
 ## Key Affordances
