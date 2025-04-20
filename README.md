@@ -1,6 +1,6 @@
 # Audio Weaver: Empowering Podcast Creation and Collaborative Learning
 
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained-No-yellow.svg)](https://github.com/aliabidhasan/AudioWeaver) 
 
 **Audio Weaver** is a cutting-edge technological solution designed to streamline podcast creation and foster a deeper, more collaborative learning experience around audio content. Leveraging the power of Large Language Models (LLMs), Audio Weaver enables users to generate podcast episodes and engage with the content in meaningful ways.
