@@ -9,6 +9,10 @@
 
 **Audio Weaver** is a cutting-edge technological solution designed to streamline podcast creation and foster a deeper, more collaborative learning experience around audio content. Leveraging the power of Large Language Models (LLMs), Audio Weaver enables users to generate podcast episodes and engage with the content in meaningful ways.
 
+### Deploy to Netlify
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/aliabidhasan/AudioWeaver)
+
 ## Key Affordances
 
 Audio Weaver is designed to offer the following key functionalities:
