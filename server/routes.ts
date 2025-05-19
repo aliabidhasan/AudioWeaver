@@ -361,8 +361,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uploadInfo = uploads.map(upload => 
         `${upload.filename} (${Math.round(upload.size / 1024)} KB)`
       ).join(", ");
-      
-      console.log(`Processing files: ${uploadInfo}`);
+      console.log(`Processing file metadata: ${uploadInfo}`);
+
+      // Extract text from each PDF
+      let allExtractedText = "";
+      let filesProcessed = 0;
+      for (const upload of uploads) {
+        try {
+          console.log(`Extracting text from: ${upload.filename}`);
+          const text = await extractTextFromPDF(upload.filepath);
+          allExtractedText += `\n\n--- Document: ${upload.filename} ---\n\n${text}`;
+          filesProcessed++;
+          console.log(`Extracted ${text.length} characters from ${upload.filename}`);
+        } catch (extractError) {
+          console.error(`Error extracting text from ${upload.filename}:`, extractError);
+          // Optionally, append an error message to allExtractedText or handle as needed
+          allExtractedText += `\n\n--- Document: ${upload.filename} (Error: Could not extract content) ---\n\n`;
+        }
+      }
+
+      if (filesProcessed === 0 && uploads.length > 0) {
+        throw new Error("Failed to extract text from any documents.");
+      }
+      console.log(`Extracted a total of ${allExtractedText.length} characters from ${filesProcessed}/${uploads.length} documents.`);
       
       // Update job status
       await storage.updateProcessingJob(processingJobId, {
@@ -370,14 +391,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         progress: 40
       });
       
-      // Create simple document metadata to send to Gemini API
-      const documentMeta = uploads.map(upload => ({
-        title: upload.filename,
-        size: upload.size,
-        path: upload.filepath
-      }));
-      
-      // Create a simple prompt for Gemini with document metadata
       // Define a proper type for the context
       const context = job.context as {
         question?: string;
@@ -385,34 +398,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         interest?: string;
         conversation?: string;
       } | undefined;
-      
-      const promptText = `Please summarize the following documents: 
-      
-      ${documentMeta.map((doc, index) => 
-        `Document ${index + 1}: ${doc.title} (${Math.round(doc.size / 1024)} KB)`
-      ).join('\n')}
-      
-      ${context?.question 
-        ? `The user is specifically interested in: ${context.question}`
-        : 'The user has not specified any particular focus area.'
-      }
-      
-      ${context?.knowledge 
-        ? `The user wants to highlight: ${context.knowledge}`
-        : ''
-      }
-      
-      ${context?.interest 
-        ? `The user finds particularly interesting: ${context.interest}`
-        : ''
-      }
-      
-      ${context?.conversation 
-        ? `The user wants to start a conversation about: ${context.conversation}`
-        : ''
-      }
-      
-      Please create a summary based on this information, focusing on likely content in these documents.`;
       
       // Get API keys
       const apiKeys = await storage.getApiKeys();
@@ -424,13 +409,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Generate AI summary using Gemini
-      console.log("Generating AI summary with Gemini...");
+      console.log("Generating AI summary with Gemini using extracted text...");
       let aiSummary;
       
       try {
         aiSummary = await generateSummary(
-          promptText,
-          context,
+          allExtractedText, // Use the actual extracted text
+          context,          // Pass the user context
           geminiKey
         );
         

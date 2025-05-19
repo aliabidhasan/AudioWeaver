@@ -1,5 +1,5 @@
 import fs from "fs/promises";
-import { createReadStream } from "fs";
+import pdf from 'pdf-parse';
 
 /**
  * Extract text from a PDF file using a simple extraction method
@@ -17,34 +17,17 @@ export async function extractTextFromPDF(filePath: string): Promise<string> {
     
     console.log(`Processing PDF file: ${fileName} (${Math.round(stats.size / 1024)} KB)`);
     
-    // For now, create a simple extraction method
-    // In a real implementation, we'd use a proper PDF library
+    const dataBuffer = await fs.readFile(filePath);
+    const data = await pdf(dataBuffer);
     
-    // Create a reasonable amount of placeholder text based on file size
-    // This is just for testing until we fix the PDF extraction library issues
-    const charCount = Math.min(Math.round(stats.size / 10), 50000);
-    
-    // Read first 512 bytes just to check if it's really a PDF
-    const header = await fs.readFile(filePath, { encoding: 'utf8', flag: 'r' }).catch(() => '');
-    const isPDF = header.indexOf('%PDF-') === 0;
-    
-    if (!isPDF) {
-      console.warn(`File ${fileName} doesn't appear to be a valid PDF`);
-    }
-    
-    console.log(`Created text representation for ${fileName} with ${charCount} estimated characters`);
-    
-    // Use file content (truncated to a reasonable size) as text
-    return `Content extracted from ${fileName} (${Math.round(stats.size / 1024)} KB).\n\n` +
-           `This document appears to be ${isPDF ? 'a valid' : 'an invalid'} PDF file.\n\n` +
-           `For a document of this size, we'd expect approximately ${charCount} characters of text content.\n\n` +
-           `The document would be processed to extract meaningful text content. ` +
-           `This would include paragraphs, headings, and potentially tables and figures. ` +
-           `The extracted text would then be sent to the Gemini API for summarization.\n\n` +
-           `Note: Due to technical limitations, we're using a placeholder for the actual PDF content. ` +
-           `The AI will still generate a relevant summary based on the document's filename and size information.`;
+    console.log(`Successfully extracted text from ${fileName}`);
+    return data.text;
   } catch (error) {
     console.error(`Error processing PDF ${filePath}:`, error);
-    throw new Error(`Failed to process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    // Check if the error is an instance of Error to satisfy TypeScript
+    if (error instanceof Error) {
+      throw new Error(`Failed to process PDF: ${error.message}`);
+    }
+    throw new Error(`Failed to process PDF: Unknown error`);
   }
 }
