@@ -8,7 +8,7 @@ import { extractTextFromPDF } from "./lib/pdf-processor";
 import { generateSummary } from "./lib/gemini-api";
 import { convertTextToSpeech } from "./lib/elevenlabs-api";
 import { z } from "zod";
-import { insertApiKeySchema, insertProcessingJobSchema, insertReflectionSchema } from "@shared/schema";
+import { insertApiKeySchema, insertProcessingJobSchema, insertReflectionSchema, insertAudioNoteSchema } from "@shared/schema";
 
 // Create uploads directory if it doesn't exist
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
@@ -315,6 +315,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error(`Error exporting reflections for summary ${req.params.id}:`, error);
       res.status(500).json({ message: "Failed to export reflections" });
+    }
+  });
+
+  // Get audio notes for a summary
+  app.get("/api/summaries/:id/notes", async (req: Request, res: Response) => {
+    try {
+      const summaryIdSchema = z.string().regex(/^\d+$/).transform(Number);
+      const validationResult = summaryIdSchema.safeParse(req.params.id);
+
+      if (!validationResult.success) {
+        return res.status(400).json({ message: "Invalid summary ID format" });
+      }
+      const summaryId = validationResult.data;
+
+      // Check if summary exists to give a more specific 404 if notes are absent *because* summary is absent
+      const summary = await storage.getSummary(summaryId);
+      if (!summary) {
+        return res.status(404).json({ message: "Summary not found" });
+      }
+
+      const notes = await storage.getAudioNotesBySummaryId(summaryId);
+      res.status(200).json(notes);
+    } catch (error) {
+      console.error(`Error fetching audio notes for summary ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to fetch audio notes" });
+    }
+  });
+
+  // Add an audio note to a summary
+  app.post("/api/summaries/:id/notes", async (req: Request, res: Response) => {
+    try {
+      const summaryIdSchema = z.string().regex(/^\d+$/).transform(Number);
+      const summaryIdValidation = summaryIdSchema.safeParse(req.params.id);
+
+      if (!summaryIdValidation.success) {
+        return res.status(400).json({ message: "Invalid summary ID format" });
+      }
+      const summaryId = summaryIdValidation.data;
+
+      const noteBodySchema = z.object({
+        timestamp: z.number().int().nonnegative({ message: "Timestamp must be a non-negative integer" }),
+        text: z.string().min(1, { message: "Note text cannot be empty" })
+      });
+
+      const bodyValidation = noteBodySchema.safeParse(req.body);
+
+      if (!bodyValidation.success) {
+        return res.status(400).json({ message: "Invalid note data", errors: bodyValidation.error.format() });
+      }
+
+      const summary = await storage.getSummary(summaryId);
+      if (!summary) {
+        return res.status(404).json({ message: "Summary not found" });
+      }
+
+      const noteData = {
+        summaryId,
+        timestamp: bodyValidation.data.timestamp,
+        text: bodyValidation.data.text
+      };
+
+      // Validate with the schema from shared/schema.ts before insertion
+      const insertValidation = insertAudioNoteSchema.safeParse(noteData);
+      if(!insertValidation.success) {
+        return res.status(400).json({ message: "Note data failed shared schema validation", errors: insertValidation.error.format() });
+      }
+
+      const createdNote = await storage.createAudioNote(insertValidation.data);
+      res.status(201).json(createdNote);
+    } catch (error) {
+      console.error(`Error adding audio note for summary ${req.params.id}:`, error);
+      if (error instanceof z.ZodError) { // Should be caught by safeParse, but as a safeguard
+        return res.status(400).json({ message: "Invalid data format", errors: error.format() });
+      }
+      res.status(500).json({ message: "Failed to add audio note" });
     }
   });
 

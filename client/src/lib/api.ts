@@ -1,5 +1,5 @@
 import { apiRequest } from "./queryClient";
-import { ApiKeys, Summary, UserContext, UserReflection } from "./types";
+import { ApiKeys, Summary, UserContext, UserReflection, AudioNote } from "./types";
 
 // API functions for Audio Weaver application
 
@@ -117,4 +117,29 @@ export async function exportReflections(summaryId: string): Promise<void> {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+export async function saveAudioNote(
+  summaryId: string,
+  noteData: { timestamp: number; text: string }
+): Promise<AudioNote> {
+  const response = await apiRequest(
+    'POST',
+    `/api/summaries/${summaryId}/notes`,
+    noteData
+  );
+  return response.json();
+}
+
+export async function getAudioNotes(summaryId: string): Promise<AudioNote[]> {
+  const response = await fetch(`/api/summaries/${summaryId}/notes`, {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to get audio notes: ${response.status} - ${errorText}`);
+  }
+
+  return response.json();
 }
