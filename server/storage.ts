@@ -38,7 +38,7 @@ export interface IStorage {
   // Reflection operations
   createReflection(reflection: InsertReflection): Promise<Reflection>;
   getReflection(id: number): Promise<Reflection | undefined>;
-  getReflectionBySummaryId(summaryId: number): Promise<Reflection | undefined>;
+  getReflectionBySummaryId(summaryId: number): Promise<Reflection[]>;
 }
 
 // Database storage implementation
@@ -178,8 +178,8 @@ export class DatabaseStorage implements IStorage {
     return reflection;
   }
   
-  async getReflectionBySummaryId(summaryId: number): Promise<Reflection | undefined> {
-    const [reflection] = await db.select()
+  async getReflectionBySummaryId(summaryId: number): Promise<Reflection[]> {
+    const reflection = await db.select()
       .from(reflections)
       .where(eq(reflections.summaryId, summaryId));
     

@@ -96,3 +96,25 @@ export async function downloadAudio(summaryId: string): Promise<Blob> {
   
   return response.blob();
 }
+
+export async function exportReflections(summaryId: string): Promise<void> {
+  const response = await fetch(`/api/summaries/${summaryId}/reflections/export`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to export reflections: ${response.status} - ${errorText}`);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `reflections-summary-${summaryId}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

@@ -280,6 +280,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Export reflections
+  app.get("/api/summaries/:id/reflections/export", async (req: Request, res: Response) => {
+    try {
+      const summaryIdSchema = z.string().regex(/^\d+$/).transform(Number);
+      const validationResult = summaryIdSchema.safeParse(req.params.id);
+
+      if (!validationResult.success) {
+        return res.status(400).json({ message: "Invalid summary ID format" });
+      }
+      const summaryId = validationResult.data;
+
+      const reflections = await storage.getReflectionBySummaryId(summaryId);
+
+      if (!reflections || reflections.length === 0) {
+        return res.status(404).json({ message: "No reflections found for this summary" });
+      }
+
+      let formattedText = "";
+      for (const reflection of reflections) {
+        formattedText += `Reflection ID: ${reflection.id}\n`;
+        formattedText += `Pride: ${reflection.pride}\n`;
+        formattedText += `Surprise: ${reflection.surprise}\n`;
+        formattedText += `Question: ${reflection.question}\n`;
+        formattedText += `Role: ${reflection.role}\n`;
+        formattedText += `Created At: ${reflection.createdAt.toISOString()}\n`;
+        formattedText += "---\n";
+      }
+
+      res.setHeader("Content-Type", "text/plain");
+      res.setHeader("Content-Disposition", `attachment; filename="reflections-summary-${summaryId}.txt"`);
+      res.send(formattedText);
+
+    } catch (error) {
+      console.error(`Error exporting reflections for summary ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to export reflections" });
+    }
+  });
+
   // Download audio
   app.get("/api/summaries/:id/audio/download", async (req, res) => {
     try {
