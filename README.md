@@ -38,14 +38,66 @@ Please be aware of the current limitations of Audio Weaver:
 
 ### Prerequisites
 
-- Bring your own API Key (for Eleven Labs and Gemini).
-- The app currently utilizies _Gemini 2.0 Flash Lite_ for improved performance on PDF parsing with lesser costs.
-- The app also utilizes _Eleven Labs Flash v2.5_ for producing high quality TTS output based on the system prompt for generating interactive podcast-style content.
-- The app provides modal for user to reflect on the produced content. 
+Audio Weaver relies on external services for its AI-powered features. You will need to provide API keys for these services. While the application allows you to enter these keys through an in-app settings modal, it's recommended to configure them as environment variables for more robust backend functionality, especially in deployed environments.
+
+-   **`GEMINI_API_KEY`**:
+    *   **Purpose:** Used for generating summaries and other AI-driven content analysis via Google's Gemini models.
+    *   **Setup:** Obtain your API key from [Google AI Studio](https://aistudio.google.com/app/apikey) (or your Google Cloud project) and set it as an environment variable named `GEMINI_API_KEY`.
+-   **`ELEVENLABS_API_KEY`**:
+    *   **Purpose:** Used for converting the generated text summaries into high-quality audio using ElevenLabs' text-to-speech service.
+    *   **Setup:** Obtain your API key from your [ElevenLabs account](https://elevenlabs.io/) and set it as an environment variable named `ELEVENLABS_API_KEY`.
+
+**Fallback Behavior:**
+*   The application's backend services (like document processing) will prioritize API keys set as environment variables.
+*   If these environment variables are not set, the backend will attempt to use keys that you have saved through the in-app settings modal.
+*   If no keys are found in either environment variables or the in-app settings, the backend will use placeholder demo keys. This allows the application to run, but the AI summarization and text-to-speech features will not function correctly.
+*   The in-app settings modal (mentioned in the "Usage" section below) provides a user-friendly way to manage your API keys, especially for client-side operations or if you prefer not to set environment variables during local development.
+
+- The app currently utilizies _Gemini 2.0 Flash Lite_ (or a similar model accessible via your API key) for improved performance on PDF parsing with lesser costs.
+- The app also utilizes _Eleven Labs Flash v2.5_ (or a similar model accessible via your API key) for producing high quality TTS output.
+- The app provides modal for user to reflect on the produced content.
 
 ### Installation
 
 1. Use Replit or Netlify to host the application
+
+### Database Setup
+
+Audio Weaver requires a PostgreSQL database to store user data, podcast information, and other application data.
+
+1.  **Set up a PostgreSQL Database:**
+    *   You can use any PostgreSQL provider. Some popular choices include:
+        *   [Neon](https://neon.tech/) (Serverless PostgreSQL, offers a free tier)
+        *   AWS RDS for PostgreSQL
+        *   Google Cloud SQL for PostgreSQL
+        *   A local PostgreSQL instance for development.
+2.  **Configure `DATABASE_URL`:**
+    *   Once your database is provisioned, you will get a connection string (URL).
+    *   Set this connection string as an environment variable named `DATABASE_URL` in your deployment environment (e.g., Replit Secrets, Netlify environment variables).
+    *   The format typically looks like: `postgresql://user:password@host:port/database`
+
+### Schema Management
+
+The database schema is defined in `shared/schema.ts`. This project uses [Drizzle ORM](https://orm.drizzle.team/) and [Drizzle Kit](https://orm.drizzle.team/kit/overview) for schema management. The Drizzle Kit configuration is located in `drizzle.config.ts`.
+
+There are two primary ways to manage and apply schema changes:
+
+1.  **Generating SQL Migrations (Recommended for Production):**
+    *   After making changes to `shared/schema.ts`, you can generate SQL migration files by running:
+        ```bash
+        npm run db:generate
+        ```
+    *   This command will create new migration files in the `./migrations` directory. These files contain the SQL statements to update your database schema.
+    *   Review these files and commit them to your version control system.
+    *   To apply these migrations to your database in a production environment, you would typically use a separate migration tool or script that executes the SQL in these files. (Note: This project does not currently include a built-in script for running these SQL migrations; `db:push` is used for development.)
+
+2.  **Pushing Schema Changes Directly (Convenient for Development):**
+    *   For development purposes, you can directly synchronize your database schema with the definitions in `shared/schema.ts` by running:
+        ```bash
+        npm run db:push
+        ```
+    *   This command will attempt to make the necessary changes to your database to match the schema.
+    *   **Caution:** `db:push` is destructive and not recommended for production databases as it can lead to data loss if not used carefully. It's best suited for local development and prototyping.
 
 ### Usage
 
