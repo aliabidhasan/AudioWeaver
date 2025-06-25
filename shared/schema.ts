@@ -85,6 +85,21 @@ export const insertReflectionSchema = createInsertSchema(reflections).pick({
   role: true
 });
 
+// Audio Notes table
+export const audio_notes = pgTable("audio_notes", {
+  id: serial("id").primaryKey(),
+  summaryId: integer("summary_id").notNull().references(() => summaries.id),
+  timestamp: integer("timestamp").notNull(), // Timestamp in seconds in the audio
+  text: text("text").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const insertAudioNoteSchema = createInsertSchema(audio_notes).pick({
+  summaryId: true,
+  timestamp: true,
+  text: true
+});
+
 // Users table (already existing in template)
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -112,6 +127,9 @@ export type InsertSummary = z.infer<typeof insertSummarySchema>;
 
 export type Reflection = typeof reflections.$inferSelect;
 export type InsertReflection = z.infer<typeof insertReflectionSchema>;
+
+export type AudioNote = typeof audio_notes.$inferSelect;
+export type InsertAudioNote = z.infer<typeof insertAudioNoteSchema>;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
