@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { UserReflection } from "@/lib/types";
-import { saveReflection } from "@/lib/api";
+import { saveReflection, exportReflections } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 interface ReflectionSectionProps {
@@ -120,6 +120,28 @@ export default function ReflectionSection({
           </div>
           
           <div className="flex justify-end space-x-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await exportReflections(summaryId);
+                  toast({
+                    title: "Reflections Exported",
+                    description: "Your reflections have been downloaded."
+                  });
+                } catch (error) {
+                  console.error("Failed to export reflections:", error);
+                  toast({
+                    title: "Export Error",
+                    description: "Failed to export reflections. Please try again.",
+                    variant: "destructive"
+                  });
+                }
+              }}
+            >
+              Export Reflections
+            </Button>
             <Button 
               type="button" 
               variant="outline"

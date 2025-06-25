@@ -2,9 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { Summary } from "@/lib/types";
+import { Summary, AudioNote } from "@/lib/types";
 import { formatTime } from "@/lib/utils";
-import { downloadAudio } from "@/lib/api";
+import { downloadAudio, saveAudioNote, getAudioNotes } from "@/lib/api";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 interface AudioPlayerProps {
   summary: Summary;
@@ -18,6 +21,12 @@ export default function AudioPlayer({ summary, onReflect }: AudioPlayerProps) {
   const [volume, setVolume] = useState(70);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const simulationTimerRef = useRef<number | null>(null);
+  const { toast } = useToast();
+
+  // State for audio notes
+  const [audioNotes, setAudioNotes] = useState<AudioNote[]>([]);
+  const [newNoteText, setNewNoteText] = useState<string>('');
+  const [isAddingNote, setIsAddingNote] = useState<boolean>(false);
   
   useEffect(() => {
     // Create audio element
@@ -74,6 +83,27 @@ export default function AudioPlayer({ summary, onReflect }: AudioPlayerProps) {
       audio.removeEventListener('ended', handleEnded);
     };
   }, [summary.audioUrl, volume]);
+
+  // Effect to fetch audio notes when summary ID changes
+  useEffect(() => {
+    if (!summary.id) return;
+
+    const fetchNotes = async () => {
+      try {
+        const fetchedNotes = await getAudioNotes(summary.id.toString());
+        setAudioNotes(fetchedNotes.sort((a, b) => a.timestamp - b.timestamp));
+      } catch (error) {
+        console.error("Failed to fetch audio notes:", error);
+        toast({
+          title: "Error",
+          description: "Could not load audio notes for this summary.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchNotes();
+  }, [summary.id, toast]);
   
   // Handle play/pause
   const togglePlayPause = () => {
@@ -172,6 +202,62 @@ export default function AudioPlayer({ summary, onReflect }: AudioPlayerProps) {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Failed to download audio:', error);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!summary.id) return;
+    const summaryIdStr = summary.id.toString();
+
+    if (!newNoteText.trim()) {
+      toast({
+        title: "Error",
+        description: "Note text cannot be empty.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!audioRef.current) {
+      toast({
+        title: "Error",
+        description: "Audio player not available.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const currentPlaybackTime = Math.round(audioRef.current.currentTime);
+    setIsAddingNote(true);
+
+    try {
+      const savedNote = await saveAudioNote(summaryIdStr, {
+        timestamp: currentPlaybackTime,
+        text: newNoteText,
+      });
+      setAudioNotes(prevNotes => [...prevNotes, savedNote].sort((a, b) => a.timestamp - b.timestamp));
+      setNewNoteText('');
+      toast({
+        title: "Note Added",
+        description: `Note added at ${formatTime(currentPlaybackTime)}.`,
+      });
+    } catch (error) {
+      console.error("Failed to add note:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add your note. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingNote(false);
+    }
+  };
+
+  const handleNoteClick = (note: AudioNote) => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = note.timestamp;
+    if (audioRef.current.paused) {
+      audioRef.current.play().catch(e => console.error('Error playing audio on note click:', e));
     }
   };
   
@@ -284,6 +370,51 @@ export default function AudioPlayer({ summary, onReflect }: AudioPlayerProps) {
           <div className="prose max-w-none text-accent">
             {summary.text.split('\n\n').map((paragraph, index) => (
               <p key={index}>{paragraph}</p>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Timestamped Notes Section */}
+      <Card className="mt-6">
+        <CardContent className="pt-6">
+          <h3 className="text-xl font-semibold mb-4">Timestamped Notes</h3>
+
+          {/* New Note Input Area */}
+          <div className="mb-6 p-4 border rounded-lg">
+            <Label htmlFor="new-note" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Add Note at {formatTime(currentTime)}
+            </Label>
+            <Textarea
+              id="new-note"
+              value={newNoteText}
+              onChange={(e) => setNewNoteText(e.target.value)}
+              placeholder="Type your note here..."
+              className="mb-2"
+            />
+            <Button onClick={handleAddNote} disabled={isAddingNote} className="mt-2 w-full sm:w-auto">
+              {isAddingNote ? 'Adding Note...' : 'Add Note'}
+            </Button>
+          </div>
+
+          {/* Display Existing Notes */}
+          <div className="space-y-3">
+            {audioNotes.length === 0 && (
+              <p className="text-gray-500 dark:text-gray-400">No notes added yet. Add one above!</p>
+            )}
+            {audioNotes.map(note => (
+              <div
+                key={note.id}
+                onClick={() => handleNoteClick(note)}
+                className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md shadow-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <p className="text-sm font-semibold text-primary mb-1">
+                  {formatTime(note.timestamp)}
+                </p>
+                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-sm">
+                  {note.text}
+                </p>
+              </div>
             ))}
           </div>
         </CardContent>

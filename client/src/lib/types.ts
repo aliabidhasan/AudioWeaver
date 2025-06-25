@@ -46,3 +46,11 @@ export interface ApiKeys {
   gemini: string;
   elevenlabs: string;
 }
+
+export interface AudioNote {
+  id: number;
+  summaryId: number;
+  timestamp: number; // in seconds
+  text: string;
+  createdAt: string; // ISO date string
+}

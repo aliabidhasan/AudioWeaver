@@ -4,10 +4,11 @@ import {
   uploads, type Upload, type InsertUpload,
   processingJobs, type ProcessingJob, type InsertProcessingJob,
   summaries, type Summary, type InsertSummary,
-  reflections, type Reflection, type InsertReflection
+  reflections, type Reflection, type InsertReflection,
+  audio_notes, type AudioNote, type InsertAudioNote
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, asc } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -38,7 +39,11 @@ export interface IStorage {
   // Reflection operations
   createReflection(reflection: InsertReflection): Promise<Reflection>;
   getReflection(id: number): Promise<Reflection | undefined>;
-  getReflectionBySummaryId(summaryId: number): Promise<Reflection | undefined>;
+  getReflectionBySummaryId(summaryId: number): Promise<Reflection[]>;
+
+  // Audio Note operations
+  createAudioNote(noteData: InsertAudioNote): Promise<AudioNote>;
+  getAudioNotesBySummaryId(summaryId: number): Promise<AudioNote[]>;
 }
 
 // Database storage implementation
@@ -178,12 +183,26 @@ export class DatabaseStorage implements IStorage {
     return reflection;
   }
   
-  async getReflectionBySummaryId(summaryId: number): Promise<Reflection | undefined> {
-    const [reflection] = await db.select()
+  async getReflectionBySummaryId(summaryId: number): Promise<Reflection[]> {
+    const reflection = await db.select()
       .from(reflections)
       .where(eq(reflections.summaryId, summaryId));
     
     return reflection;
+  }
+
+  // Audio Note operations
+  async createAudioNote(noteData: InsertAudioNote): Promise<AudioNote> {
+    const [note] = await db.insert(audio_notes).values(noteData).returning();
+    return note;
+  }
+
+  async getAudioNotesBySummaryId(summaryId: number): Promise<AudioNote[]> {
+    const notes = await db.select()
+      .from(audio_notes)
+      .where(eq(audio_notes.summaryId, summaryId))
+      .orderBy(asc(audio_notes.timestamp));
+    return notes;
   }
 }
 
